@@ -8,6 +8,20 @@ More information as to the maintenance support period of Amazon Linux 2022 can b
 
 The full list of core packages will be ﬁnalized during the preview. If you want to see more packages included as core packages, tell us. We will evaluate as we are collecting feedback. Feedback on Amazon Linux 2022 can be provided through your designated AWS representative or [Amazon Linux Discussion Forums](https://forums.aws.amazon.com/forum.jspa?forumID=228).
 
+## Schema for support_info.xml file:
+
+Amazon Linux developed an internal tooling which uses `repoquery` to generate the `support_info.xml` file. The elements of that XML file are defined by an XSD schema, file has been added under `configurations/` dir, and it can be tested with the `make` command when the Makefile has -
+
+```
+
+SUPPORT_INFO_SCHEMA = configuration/support_info.xsd
+SUPPORT_INFO_FILE = support_info.xml
+
+test: lint
+lint: $(SUPPORT_INFO_SCHEMA) $(SUPPORT_INFO_FILE)
+        xmllint --noout --schema $(SUPPORT_INFO_SCHEMA) $(SUPPORT_INFO_FILE)
+
+```
 
 ## Plugin Usage:
 
