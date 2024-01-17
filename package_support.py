@@ -33,9 +33,8 @@ class PackageHandler(xml.sax.handler.ContentHandler):
     def startElement(self, tag, attrs):
         if tag == "package":
             eol_id = attrs.get("note", "eol")
-            nevra = attrs.get("nevra")
-            data = self.pkg_data.setdefault(eol_id, {})
-            data[attrs["name"]] = {"nevra": nevra}
+            data = self.pkg_data.setdefault(eol_id, [])
+            data.append(attrs["name"])
 
 
 class StatementHandler(xml.sax.handler.ContentHandler):
@@ -58,6 +57,19 @@ class StatementHandler(xml.sax.handler.ContentHandler):
                 "text": "",
             }
             self._tags_stack = []
+        if tag == "package" and self._current is not None:
+            note_id = attrs.get("note", self._current["eol_id"])
+            data = self.support_data.setdefault(note_id, {})
+            data.update(
+                {
+                    "start_date": self._current["start_date"],
+                    "end_date": self._current["end_date"],
+                    "status": self._current["status"],
+                    "summary": self._current["summary"],
+                    "link": self._current["link"],
+                    "text": self._current["text"],
+                }
+            )
 
         if self._current is not None:
             self._tags_stack.append(tag)
@@ -120,6 +132,7 @@ class NoteHandler(xml.sax.handler.ContentHandler):
 
 # available filters for packages
 STATE_AVAILABLE = "available"
+STATE_UNAVAILABLE = "unavailable"
 STATE_INSTALLED = "installed"
 SUPPORT_STATUS_SUPPORTED = "supported"
 SUPPORT_STATUS_UNSUPPORTED = "unsupported"
@@ -160,6 +173,18 @@ class SupportInfoCommand(dnf.cli.Command):
     def get_available_installed(self):
         """Collect all available and installed packages"""
         with dnf.Base() as base:
+            # read the configuration file
+            conf = base.conf
+            conf.read()
+            # set installroot
+            installroot = "/"
+            conf.installroot = installroot
+            # don't prompt for user confirmations
+            conf.assumeyes = True
+            # load substitutions (awsregion, awsdomain) from the filesystem
+            conf.substitutions.update_from_etc(installroot)
+            # check amazonlinux.repo (and others) to find packages available to install
+            base.read_all_repos()
             base.fill_sack(load_system_repo=True)
             # query matches all packages in sack
             q = base.sack.query()
@@ -264,8 +289,15 @@ class SupportInfoCommand(dnf.cli.Command):
         print()
 
     def get_pkg_os_state(self, package, package_states):
-        """Return state of a package if it is installed or available to be installed"""
-        return STATE_INSTALLED if package in package_states[STATE_INSTALLED] else STATE_AVAILABLE
+        """Return NEVRA and state of a package if it is installed or available to be installed"""
+        if package in package_states[STATE_INSTALLED]:
+            nevra = package_states[STATE_INSTALLED][package]["version"]
+            return STATE_INSTALLED, nevra
+        elif package in package_states[STATE_AVAILABLE]:
+            nevra = package_states[STATE_AVAILABLE][package]["version"]
+            return STATE_AVAILABLE, nevra
+        else:
+            return STATE_UNAVAILABLE, ""
 
     def get_pkg_eol(self, pkg, package_data, support_statement_data, note_data, package_states):
         """Get package data from support_info.xml"""
@@ -274,8 +306,7 @@ class SupportInfoCommand(dnf.cli.Command):
             dnf_output = dnf.cli.output.Output(base, base.conf)
         for eol_id in package_data:
             if pkg in package_data[eol_id]:
-                nevra = package_data[eol_id][pkg]["nevra"]
-                state = self.get_pkg_os_state(pkg, package_states)
+                state, nevra = self.get_pkg_os_state(pkg, package_states)
                 support_statement = support_statement_data[eol_id]
                 # dnf supportinfo --pkg <pkg> --showxml
                 if self.opts.show_xml:
@@ -306,25 +337,23 @@ class SupportInfoCommand(dnf.cli.Command):
         Print table based on supported, unsupported, installed
         and uninstalled filters
         """
-        nevra_dict = self._nevra_parser(nevra)
-        version = nevra_dict["version"] + "-" + nevra_dict["release"]
         # generate table
         pkg_statement = self._record_table(
             pkg,
-            version,
+            nevra,
             state,
             support_info["status"],
             support_info["end_date"],
             support_info["summary"],
         )
-        print(pkg_statement)
+        if state != STATE_UNAVAILABLE:
+            print(pkg_statement)
 
     def display_support_statements(self, _filter, packages, statement, package_states):
         """Print support statements for supported, unsupported or all packages"""
         for eol_id, data in packages.items():
             for pkg in sorted(data):
-                state = self.get_pkg_os_state(pkg, package_states)
-                nevra = data[pkg]["nevra"]
+                state, nevra = self.get_pkg_os_state(pkg, package_states)
                 support_info = statement[eol_id]
 
                 # gather packages information per user input filter
