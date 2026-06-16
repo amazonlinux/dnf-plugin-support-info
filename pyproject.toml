@@ -1,0 +1,94 @@
+[build-system]
+requires = ["setuptools>=59", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# NOTE on metadata duplication
+# ----------------------------
+# The [project] table below is the PEP 621 representation of this package.
+# It is the documented source of truth for tooling that supports PEP 621
+# (setuptools >= 61, build, hatch, modern IDEs).
+#
+# Some downstream RPM builds use older setuptools (59.x) which silently
+# ignores [project]. To make sure those builds still produce a correctly-
+# tagged wheel, the same metadata is mirrored in setup.py. When you change
+# anything below, change it in setup.py too.
+
+[project]
+name = "dnf-plugin-support-info"
+version = "2.0.0"
+description = "DNF plugin for querying and displaying Amazon Linux package support information"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "GPL-2.0-only" }
+authors = [{ name = "Amazon.com, Inc. or its affiliates" }]
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: System :: Software Distribution",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = [
+    "supportinfo",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+dev = [
+    "black",
+    "isort",
+    "mypy",
+    "flake8",
+    "pep8-naming",
+]
+
+[project.urls]
+Homepage = "https://github.com/amazonlinux/dnf-plugin-support-info"
+Issues = "https://github.com/amazonlinux/dnf-plugin-support-info/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["test*"]
+
+[tool.setuptools.package-data]
+dnf_support_info_plugin = ["py.typed"]
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+known_first_party = ["dnf_support_info_plugin"]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+check_untyped_defs = true
+show_error_codes = true
+pretty = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+addopts = [
+    "--verbose",
+    "--cov=dnf_support_info_plugin",
+    "--cov-report=term-missing",
+    "--durations=5",
+    "--color=yes",
+]
+xfail_strict = true
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source = ["dnf_support_info_plugin"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "@(abc\\.)?abstractmethod",
+]

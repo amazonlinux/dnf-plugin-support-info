@@ -1,0 +1,31 @@
+# Editor backups
+*~
+*#
+*.swp
+*.DS_Store
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+
+# Test and coverage caches
+.coverage
+.coverage.*
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# Source tarballs
+dnf-plugin-support-info-*.tar.gz
+dnf-plugin-support-info-*/
+
+# Internal Amazon Linux build artifacts (`tape` workspace)
+.tape/
+
+# Virtual environments
+.venv/
+venv/

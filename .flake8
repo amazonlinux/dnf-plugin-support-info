@@ -1,0 +1,24 @@
+[flake8]
+max-line-length = 100
+extend-exclude =
+    .venv,
+    venv,
+    build,
+    dist,
+    .eggs,
+    *.egg-info
+ignore =
+    # Whitespace before ':' - black-compatible
+    E203,
+    # Line break before binary operator - black-compatible
+    W503,
+    # Line too long - handled by black
+    E501,
+    # Function name should be lowercase - existing code uses camelCase in places
+    N802,
+    # Module level import not at top of file - some files import after sys.path tweaks
+    E402,
+    # Local variable assigned but never used - common in test fixtures
+    F841,
+    # Too many leading '#' in block comment
+    E266
