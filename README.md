@@ -5,7 +5,7 @@ support status, dates, severities, and lifecycle phases of any package on
 Amazon Linux 2023.
 
 The plugin is a thin DNF integration over the
-[`supportinfo`](https://github.com/amazonlinux/AmazonLinuxSupportInfo) Python
+[`supportinfo`](https://github.com/amazonlinux/amazon-linux-supportinfo) Python
 library, which does the actual XML parsing.
 
 Just want to read the published support statements?
