@@ -1,0 +1,85 @@
+# DNF Support Info Plugin Configuration
+#
+# Copy this file to /etc/dnf/plugins/supportinfo.conf and customise as
+# needed. The plugin loads it automatically when DNF starts the
+# `supportinfo` subcommand. The only required option is `baseurl`.
+
+[main]
+
+# Base URL for support info XML file (required)
+# DNF variables like $awsregion are automatically substituted
+baseurl = https://my-bucket-$awsregion.s3.amazonaws.com/supportinfo.xml
+
+# Template URL for support info XSD schema file (optional)
+# Used for XML validation if provided
+templateurl = https://my-bucket-$awsregion.s3.amazonaws.com/supportinfo.xsd
+
+# Cache expiration time in seconds (optional)
+# Default: 1800 (30 minutes) if not specified
+# How long cached files remain valid before checking if the source has changed
+# - -1 = infinite cache (never expires; use --clean-cache to clear)
+# - 0  = always revalidate (uses HTTP ETag to skip the download if unchanged)
+# - Positive integer = cache duration in seconds (max: 7776000 = 90 days)
+#
+# Out-of-range or non-integer values cause the plugin to abort with a config
+# error; they are not silently coerced to the default.
+metadata_expire = 3600
+
+# GPG signature verification (optional, disabled by default)
+# When enabled, the plugin downloads the detached signature file and verifies it
+# against the trusted public keys listed in gpgkey before using supportinfo.xml.
+# This protects against tampering of the downloaded file.
+# Use 1 to enable, 0 to disable (same convention as DNF repo gpgcheck).
+# The signature is always fetched from baseurl + ".asc" (and templateurl + ".asc"
+# if templateurl is set).
+#
+# gpgcheck = 0
+#
+# One or more GPG key URLs (file:// or https://) used to verify the signature.
+# Matches the DNF repo gpgkey option convention exactly.
+# Multiple URLs may be separated by whitespace or newlines.
+# On first use each key is fetched and cached; subsequent runs skip known keys.
+#
+# gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2023
+# gpgkey = https://example.com/keys/my-signing-key.asc
+
+# Legacy format mode (optional, disabled by default)
+# When enabled, the plugin converts the downloaded schema_version='1.0' XML
+# to the legacy (unversioned) format used by the previous
+# dnf-plugin-support-info package.
+#
+# This ensures:
+# - Plugin output matches the old field names and format
+# - The legacy XML file is saved to the old plugin's location
+#   (/usr/lib/python<version>/site-packages/dnf-plugins/support_info.xml)
+# - A symlink is created in the cache directory pointing to the legacy file
+# - Scripts reading from the old file path continue to work
+#
+# Requires root privileges (writes to system paths).
+# Use 1 to enable, 0 to disable.
+# legacy = 0
+
+# Examples of other configurations:
+#
+# For local file access:
+# baseurl = file:///var/lib/support-info/supportinfo.xml
+# templateurl = file:///var/lib/support-info/supportinfo.xsd
+#
+# For different cache duration:
+# metadata_expire = 7200  # 2 hours
+# metadata_expire = 86400 # 1 day
+#
+# Minimal configuration (only baseurl required):
+# baseurl = https://example.com/supportinfo.xml
+#
+# Configuration with GPG verification using the Amazon Linux 2023 key:
+# baseurl = https://my-bucket.s3.amazonaws.com/supportinfo.xml
+# gpgcheck = 1
+# gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2023
+#   -> will fetch https://my-bucket.s3.amazonaws.com/supportinfo.xml.asc automatically
+#
+# Configuration with multiple trusted keys:
+# baseurl = https://my-bucket.s3.amazonaws.com/supportinfo.xml
+# gpgcheck = 1
+# gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-amazon-linux-2023
+#          https://example.com/keys/another-key.asc
